@@ -4,16 +4,15 @@ using UnityEngine;
 
 public class MovePlayer : MonoBehaviour
 {
-    [SerializeField]float moveSpeed = 8f;
-    [SerializeField]float jumpingPower = 16f;
+    [SerializeField] float moveSpeed = 8f;
+    [SerializeField] float jumpingPower = 16f;
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Transform groundCheck;
     [SerializeField] LayerMask groundLayer;
 
     float horizontal;
     bool isFacingRight = true;
-
-    // Update is called once per frame
+    
     void Update()
     {
         horizontal = Input.GetAxisRaw("Horizontal");
@@ -30,7 +29,6 @@ public class MovePlayer : MonoBehaviour
 
         Flip();
     }
-
 
     void FixedUpdate()
     {
