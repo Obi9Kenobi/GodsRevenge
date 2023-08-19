@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class MovePlayer : MonoBehaviour
 {
+    public Animator animator;
+
     [SerializeField] float moveSpeed = 8f;
     [SerializeField] float jumpingPower = 16f;
     [SerializeField] Rigidbody2D rb;
@@ -12,19 +14,22 @@ public class MovePlayer : MonoBehaviour
 
     float horizontal;
     bool isFacingRight = true;
-    
+    float speed_x;
+    float speed_y;
     void Update()
     {
         horizontal = Input.GetAxisRaw("Horizontal");
+        speed_x = rb.velocity.x;
+        speed_y = rb.velocity.y;
 
         if (Input.GetButtonDown("Jump") && IsGrounded())
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
+            rb.velocity = new Vector2(speed_x, jumpingPower);
         }
 
-        if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
+        if (Input.GetButtonUp("Jump") && speed_y > 0f)
         {
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
+            rb.velocity = new Vector2(speed_x, speed_y * 0.5f);
         }
 
         Flip();
@@ -32,7 +37,10 @@ public class MovePlayer : MonoBehaviour
 
     void FixedUpdate()
     {
-        rb.velocity = new Vector2(horizontal * moveSpeed, rb.velocity.y);
+        rb.velocity = new Vector2(horizontal * moveSpeed, speed_y);
+        animator.SetFloat("Speed_Horizontal", Mathf.Abs(horizontal));
+        animator.SetFloat("Speed_Vertical", speed_y);
+        animator.SetBool("Is_Grounded", IsGrounded());
     }
 
     bool IsGrounded()
