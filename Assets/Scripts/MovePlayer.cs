@@ -1,27 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Xml.Serialization;
 using UnityEngine;
 
 public class MovePlayer : MonoBehaviour
 {
     public Animator animator;
 
-    [SerializeField] float moveSpeed = 8f;
-    [SerializeField] float jumpingPower = 16f;
+    [SerializeField] float GroundMoveSpeed = 16f;
+    [SerializeField] float jumpingPower = 18f;
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Transform groundCheck;
+    [SerializeField] Transform wallCheck;
     [SerializeField] LayerMask groundLayer;
-    [SerializeField] float GroundCheckRadius = 0.2f;
+    [SerializeField] Transform backWallCheck;
+    [SerializeField] LayerMask backWallLayer;
+    [SerializeField] float groundCheckRadius = 0.2f;
+    [SerializeField] float wallCheckRadius = 0.2f;
+    [SerializeField] float backWallCheckRadius = 0.6f;
 
     private float horizontalInput;
-    private bool jumpInput;
     private bool isFacingRight = true;
     private float currentHorizontalSpeed;
     private float currentVerticalSpeed;
+    private bool jumpLocked = false;
 
     private void Update()
     {
         HandleInput();
+        UnlockJumpIfNeeded();
         HandleJump();
         UpdateAnimation();
         FlipIfNeeded();
@@ -31,7 +39,7 @@ public class MovePlayer : MonoBehaviour
     {
         currentHorizontalSpeed = rb.velocity.x;
         currentVerticalSpeed = rb.velocity.y;
-        HandleMovement(); 
+        HandleMovement();
     }
 
     private void HandleInput()
@@ -48,14 +56,15 @@ public class MovePlayer : MonoBehaviour
 
     private void HandleMovement()
     {
-        rb.velocity = new Vector2(horizontalInput * moveSpeed, currentVerticalSpeed);
+        rb.velocity = new Vector2(horizontalInput * GroundMoveSpeed, currentVerticalSpeed);
     }
 
     private void HandleJump()
     {
-        if (Input.GetButtonDown("Jump") && IsGrounded())
+        if (Input.GetButtonDown("Jump") && (IsGrounded() || IsWalled() || IsBackWalled()) && (!jumpLocked))
         {
             rb.velocity = new Vector2(currentHorizontalSpeed, jumpingPower);
+            LockJump();  
         }
 
         if (Input.GetButtonUp("Jump") && currentVerticalSpeed > 0f)
@@ -64,9 +73,29 @@ public class MovePlayer : MonoBehaviour
         }
     }
 
+    private void LockJump()
+    {
+        jumpLocked = true;
+    }
+    private void UnlockJumpIfNeeded()        
+    {
+        if (IsGrounded() || currentHorizontalSpeed != 0)
+        {
+            jumpLocked = false;
+        }
+    }
+
     private bool IsGrounded()
     {
-        return Physics2D.OverlapCircle(groundCheck.position, GroundCheckRadius, groundLayer);
+        return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+    }
+    private bool IsWalled()
+    {
+        return Physics2D.OverlapCircle(wallCheck.position, wallCheckRadius, groundLayer);
+    }
+    private bool IsBackWalled()
+    {
+        return Physics2D.OverlapCircle(backWallCheck.position, backWallCheckRadius, backWallLayer);
     }
 
     private void FlipIfNeeded()
