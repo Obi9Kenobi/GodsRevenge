@@ -10,7 +10,7 @@ public class MovePlayer : MonoBehaviour
     public Animator animator;
 
     [SerializeField] float groundMoveSpeed = 16f;
-    [SerializeField] float airMoveSpeed = 0.01f;
+    [SerializeField] float airMoveSpeed = 0.3f;
     [SerializeField] float jumpingPower = 18f;
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Transform groundCheck;
