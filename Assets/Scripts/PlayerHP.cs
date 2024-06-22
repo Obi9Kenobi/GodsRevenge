@@ -1,50 +1,37 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerHP : MonoBehaviour
 {
-    GameObject healingText;    //temporary
+    public MovePlayer movePlayerScript;
 
     [SerializeField] Rigidbody2D rb;
 
     public int maxHealth = 100;
     public int currentHealth;
-    int missingHealth;
+    private int missingHealth;
 
-    int wineStrength = 50;  //Effectivity of heal
-    int drinkSpeed = 2;
-
+    private int healPower = 50;  //Effectivity of heal
+    private int drinkingDuration = 2;
     public HealthBar healthBar;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        healingText = GameObject.Find("HealingText");   //temporary
-        healingText.SetActive(false);                   //temporary
-
         currentHealth = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
+        movePlayerScript = rb.GetComponent<MovePlayer>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        InputHandler();
+        HandleInput();
     }
 
-    void InputHandler()
+    private void HandleInput()
     {
         //Healing with wine flask
-        if (Input.GetKeyDown(KeyCode.R) && currentHealth < maxHealth)    //<-- в цій іфці ще треба перевіряти чи гравець торкається землі але 
-                                                          // я не знаю чи краще заново це все перевіряти, чи зробити в MovePlayer цю перевірку публічною (якщо так можна)
+        if (Input.GetKeyDown(KeyCode.R) && (currentHealth < maxHealth) && movePlayerScript.IsGrounded())
         {
-            healingText.SetActive(true);    //temporary
-            GetComponent<MovePlayer>().enabled = false;
-            rb.velocity = new Vector2(0, 0);
-            //в цьому рядку ще має бути вмикання анімації пиття (коли зробиш її)
-
-            Invoke("GetHeal", drinkSpeed);
+            DrinkFlask();
         }
 
         //Getting damage
@@ -54,21 +41,37 @@ public class PlayerHP : MonoBehaviour
         }
     }
 
-    void GetHeal()
+    private void DrinkFlask()
     {
-        healingText.SetActive(false);    //temporary
+        healthBar.ShowDrinkingText(true);
+        FreezePlayer(true);
+        Invoke("GetHeal", drinkingDuration);
+    }
+    private void GetHeal()
+    {
         missingHealth = maxHealth - currentHealth;
-
-        currentHealth += Mathf.Clamp(wineStrength, 0, missingHealth);
+        currentHealth += Mathf.Clamp(healPower, 0, missingHealth);
         healthBar.SetHealth(currentHealth);
-        
-        GetComponent<MovePlayer>().enabled = true;
+        FreezePlayer(false);
+        healthBar.ShowDrinkingText(false);
     }
 
-    void TakeDamage(int damage)
+    public void TakeDamage(int damage)
     {
         currentHealth -= damage;
-
         healthBar.SetHealth(currentHealth);
+    }
+
+    public void FreezePlayer(bool state)
+    {
+        if (state) {
+            GetComponent<MovePlayer>().enabled = false;
+            rb.velocity = new Vector2(0, 0);
+        }
+        else
+        {
+            GetComponent<MovePlayer>().enabled = true;
+        }
+        
     }
 }

@@ -1,9 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Xml.Serialization;
 using UnityEngine;
-using UnityEngine.XR;
 
 public class MovePlayer : MonoBehaviour
 {
@@ -12,7 +7,6 @@ public class MovePlayer : MonoBehaviour
     [SerializeField] float groundMoveSpeed = 16f;
     [SerializeField] float airMoveSpeed = 0.3f;
     [SerializeField] float jumpingPower = 18f;
-    [SerializeField] Rigidbody2D rb;
     [SerializeField] Transform groundCheck;
     [SerializeField] Transform wallCheck;
     [SerializeField] LayerMask groundLayer;
@@ -22,16 +16,25 @@ public class MovePlayer : MonoBehaviour
     [SerializeField] float wallCheckRadius = 1.2f;
     [SerializeField] float backWallCheckRadius = 0.6f;
 
+    private Rigidbody2D rb;
     private float horizontalInput;
     private bool isFacingRight = true;
     private float currentHorizontalSpeed;
     private float currentVerticalSpeed;
     private GameObject lastCollidedWall = null;
+    private SpriteRenderer spriteRenderer;
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
 
     private void Update()
     {
         HandleInput();
         HandleJump();
+        HandleBackWallJump();
         UpdateAnimation();
         FlipIfNeeded();
     }
@@ -56,7 +59,7 @@ public class MovePlayer : MonoBehaviour
         animator.SetBool("Is_Grounded", IsGrounded());
     }
 
-    private bool IsGrounded()
+    public bool IsGrounded()
     {
         return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
     }
@@ -81,14 +84,26 @@ public class MovePlayer : MonoBehaviour
             return null;
         }
     }
+
+    private GameObject GetCollidedBackWall()
+    {
+        if (IsWalled())
+        {
+            return (Physics2D.OverlapCircleAll(wallCheck.position, wallCheckRadius, backWallLayer)[0]).gameObject;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     private void FlipIfNeeded()
     {
         if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
         {
             isFacingRight = !isFacingRight;
-            Vector3 localScale = transform.localScale;
-            localScale.x *= -1f;
-            transform.localScale = localScale;
+
+            spriteRenderer.flipX = !isFacingRight;
         }
     }
     private void HandleMovement()
@@ -112,7 +127,7 @@ public class MovePlayer : MonoBehaviour
 
     private void HandleJump()
     {
-        if (Input.GetButtonDown("Jump") && (IsGrounded() || (IsWalled() && (GetCollidedWall() != lastCollidedWall)) || IsBackWalled()))
+        if (Input.GetButtonDown("Jump") && (IsGrounded() || (IsWalled() && (GetCollidedWall() != lastCollidedWall))))
         {
             lastCollidedWall = GetCollidedWall();
             rb.velocity = new Vector2(horizontalInput * groundMoveSpeed, jumpingPower);
@@ -121,6 +136,29 @@ public class MovePlayer : MonoBehaviour
         if (Input.GetButtonUp("Jump") && currentVerticalSpeed > 0f)
         {
             rb.velocity = new Vector2(currentHorizontalSpeed, currentVerticalSpeed * 0.5f);
+        }
+    }
+
+    private void HandleWallJump()
+    {
+        if (Input.GetButtonDown("Jump") && (IsGrounded() || (IsWalled() && (GetCollidedWall() != lastCollidedWall))))
+        {
+            lastCollidedWall = GetCollidedWall();
+            rb.velocity = new Vector2(horizontalInput * groundMoveSpeed, jumpingPower);
+        }
+
+        if (Input.GetButtonUp("Jump") && currentVerticalSpeed > 0f)
+        {
+            rb.velocity = new Vector2(currentHorizontalSpeed, currentVerticalSpeed * 0.5f);
+        }
+    }
+
+    private void HandleBackWallJump()
+    {
+        if (Input.GetButtonDown("Jump") && IsBackWalled() && lastCollidedWall)
+        {
+            lastCollidedWall = GetCollidedBackWall();
+            rb.velocity = new Vector2(currentHorizontalSpeed, jumpingPower);
         }
     }
 }
